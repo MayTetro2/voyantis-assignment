@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Queue Manager</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f2f0ee;
+            color: #eaeaea; 
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            width: 40%;
+            background-color: #27293d;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+        }
+        h1 {
+            color: #fc0566;
+            margin-bottom: 10px;
+        }
+        h2 {
+            color: #ffffff;
+            margin-bottom: 10px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+        }
+        label {
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        input {
+            background-color: #2f3144; 
+            border: 1px solid #3e4059;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 15px;
+            color: #ffffff; 
+        }
+        button {
+            padding: 12px;
+            background-color: #4a90e2;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #357abf;
+        }
+        #response {
+            margin-top: 20px;
+            padding: 12px;
+            background-color: #3e4059;
+            border-radius: 8px;
+            color: #d1d1e9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Queue Message Manager</h1>
+
+        <h2>Send a Message</h2>
+        <form id="sendForm">
+            <label for="queueName">Queue Name:</label>
+            <input type="text" id="queueName" name="queueName" required>
+            <label for="message">Message (JSON):</label>
+            <input type="text" id="message" name="message" required>
+            <button type="submit">Send Message</button>
+        </form>
+
+        <h2>Get the Next Message</h2>
+        <form id="getForm">
+            <label for="getQueueName">Queue Name:</label>
+            <input type="text" id="getQueueName" name="getQueueName" required>
+            <label for="timeout">Timeout (ms):</label>
+            <input type="number" id="timeout" name="timeout" placeholder="1000">
+            <button type="submit">Get Message</button>
+        </form>
+
+        <div id="response"></div>
+    </div>
+
+    <script>
+        document.getElementById('sendForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            
+            const queueName = document.getElementById('queueName').value;
+            const message = document.getElementById('message').value;
+
+            try {
+                const response = await fetch(`http://localhost:3000/api/v1/${queueName}`, { // Fixed URL
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: message }) // Stringified JSON object
+                });
+
+                if (response.ok) {
+                    document.getElementById('response').textContent = 'Message sent successfully!';
+                } else {
+                    document.getElementById('response').textContent = 'Failed to send message.';
+                }
+            } catch (error) {
+                document.getElementById('response').textContent = 'Error: ' + error.message;
+            }
+        });
+
+        document.getElementById('getForm').addEventListener('submit', async (event) => {
+          event.preventDefault();
+
+          const queueName = document.getElementById('getQueueName').value;
+          const timeout = document.getElementById('timeout').value || 1000;
+
+          try {
+              const response = await fetch(`http://localhost:3000/api/v1/${queueName}?timeout=${timeout}`);
+
+              if (response.status === 200) {
+                  const data = await response.json();
+                  const message = JSON.parse(data.message); 
+                  document.getElementById('response').textContent = 'Received Message: ' + JSON.stringify(message);
+              } else if (response.status === 204) {
+                  document.getElementById('response').textContent = 'No message available within the timeout period.';
+              } else {
+                  document.getElementById('response').textContent = 'Failed to get message.';
+              }
+          } catch (error) {
+              document.getElementById('response').textContent = 'Error: ' + error.message;
+          }
+      });
+    </script>
+</body>
+</html>
